@@ -13,6 +13,7 @@ Butuh Node.js 24 atau lebih baru untuk server karena SQLite memakai `node:sqlite
 5. Server mengirim history chat terakhir dari SQLite.
 6. Semua pesan baru disimpan ke SQLite dan dibroadcast realtime ke semua user di room `public`.
 7. Setelah pesan user masuk, server membaca history chat terbaru dari SQLite dan meminta DeepSeek memutuskan apakah `joko linux exploit` perlu nimbrung atau diam.
+8. History chat di room `public` direset otomatis setiap hari jam `00:00` WIB.
 
 ## Schema SQLite
 
@@ -33,6 +34,11 @@ CREATE TABLE messages (
 );
 
 CREATE INDEX idx_messages_room_id ON messages(room, id);
+
+CREATE TABLE app_state (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 ```
 
 ## Jalankan Server
@@ -61,6 +67,7 @@ DEEPSEEK_MODEL=deepseek-v4-flash
 AI_TRIGGER=@ai
 AI_AUTONOMOUS=1
 AI_CONTEXT_LIMIT=30
+HISTORY_RESET_ENABLED=1
 ```
 
 Kalau ingin set manual:
@@ -97,7 +104,12 @@ AI_NO_REPLY=NO_REPLY
 AI_CONTEXT_LIMIT=30
 AI_MAX_TOKENS=500
 AI_TIMEOUT_MS=30000
+HISTORY_RESET_ENABLED=1
 ```
+
+## Reset History
+
+Server menghapus isi tabel `messages` untuk room `public` setiap hari jam `00:00` WIB. Kalau service sempat mati saat tengah malam, reset akan dijalankan saat service hidup lagi.
 
 ## Join dari Client
 

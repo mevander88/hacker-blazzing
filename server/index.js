@@ -21,6 +21,10 @@ const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 30000);
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-v4-flash";
+const HISTORY_RESET_ENABLED = process.env.HISTORY_RESET_ENABLED !== "0";
+const HISTORY_RESET_TIME_ZONE = "Asia/Jakarta";
+const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
+const LAST_HISTORY_RESET_KEY = "last_history_reset_date";
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
@@ -82,6 +86,13 @@ function initDb() {
   `);
 
   db.exec("CREATE INDEX IF NOT EXISTS idx_messages_room_id ON messages(room, id)");
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS app_state (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
 }
 
 function normalizeName(value) {
@@ -111,6 +122,95 @@ function activeUsers(io) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function getState(key) {
+  return all("SELECT value FROM app_state WHERE key = ?", [key])[0]?.value || "";
+}
+
+function setState(key, value) {
+  run(
+    `
+      INSERT INTO app_state (key, value) VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `,
+    [key, value]
+  );
+}
+
+function jakartaDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: HISTORY_RESET_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+    day: Number(parts.find((part) => part.type === "day")?.value)
+  };
+}
+
+function currentJakartaDate() {
+  const { year, month, day } = jakartaDateParts();
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function nextJakartaMidnightDelayMs() {
+  const { year, month, day } = jakartaDateParts();
+  const nextMidnightUtc = Date.UTC(year, month - 1, day + 1, 0, 0, 0) - JAKARTA_OFFSET_MS;
+  return Math.max(1000, nextMidnightUtc - Date.now());
+}
+
+function clearChatHistory(io, reason) {
+  const resetDate = currentJakartaDate();
+
+  run("DELETE FROM messages WHERE room = ?", [ROOM_NAME]);
+  setState(LAST_HISTORY_RESET_KEY, resetDate);
+
+  if (io) {
+    io.to(ROOM_NAME).emit("system", {
+      body: `History chat direset otomatis jam 00:00 WIB (${reason}).`
+    });
+  }
+
+  console.log(`Chat history cleared for ${ROOM_NAME} on ${resetDate} (${reason})`);
+}
+
+function ensureDailyHistoryReset(io) {
+  if (!HISTORY_RESET_ENABLED) return;
+
+  const resetDate = currentJakartaDate();
+  const lastResetDate = getState(LAST_HISTORY_RESET_KEY);
+
+  if (!lastResetDate) {
+    setState(LAST_HISTORY_RESET_KEY, resetDate);
+    return;
+  }
+
+  if (lastResetDate !== resetDate) {
+    clearChatHistory(io, "missed midnight reset");
+  }
+}
+
+function scheduleDailyHistoryReset(io) {
+  if (!HISTORY_RESET_ENABLED) return;
+
+  const delay = nextJakartaMidnightDelayMs();
+  const nextRun = new Date(Date.now() + delay).toISOString();
+  console.log(`Next chat history reset at ${nextRun} (${HISTORY_RESET_TIME_ZONE} 00:00)`);
+
+  setTimeout(() => {
+    try {
+      clearChatHistory(io, "daily reset");
+    } catch (err) {
+      console.error(`Failed to reset chat history: ${err.message}`);
+    } finally {
+      scheduleDailyHistoryReset(io);
+    }
+  }, delay);
 }
 
 function insertMessage(room, userName, body) {
@@ -252,6 +352,9 @@ function start() {
       origin: "*"
     }
   });
+
+  ensureDailyHistoryReset(io);
+  scheduleDailyHistoryReset(io);
 
   io.on("connection", (socket) => {
     const name = normalizeName(socket.handshake.auth?.name || socket.handshake.query?.name);
