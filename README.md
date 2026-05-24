@@ -110,10 +110,11 @@ AI_TRIGGER=@ai
 AI_AUTONOMOUS=1
 AI_NO_REPLY=NO_REPLY
 AI_CONTEXT_LIMIT=30
-AI_MAX_TOKENS=500
-AI_TIMEOUT_MS=30000
+AI_TIMEOUT_MS=120000
 HISTORY_RESET_ENABLED=1
 ```
+
+`AI_MAX_TOKENS` sengaja tidak diset supaya server tidak membatasi panjang jawaban Joko. Kalau variabel itu ditambahkan sendiri, nilainya akan dikirim ke DeepSeek sebagai batas output.
 
 ## Reset History
 
