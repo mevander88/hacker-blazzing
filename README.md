@@ -78,6 +78,8 @@ Di mesin server sendiri atau dari komputer teman:
 ./join.sh budi
 ```
 
+Setiap `join.sh` dijalankan, script akan cek update dari GitHub dan menjalankan `git pull --ff-only` otomatis jika ada update yang aman diterapkan.
+
 Override server kalau pakai domain/IP lain:
 
 ```bash
