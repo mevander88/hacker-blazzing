@@ -26,7 +26,6 @@ const HISTORY_RESET_TIME_ZONE = "Asia/Jakarta";
 const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
 const LAST_HISTORY_RESET_KEY = "last_history_reset_date";
 const AI_ROLE_KEY = "ai_custom_role";
-const AI_ROLE_MAX_LENGTH = 2000;
 const AI_CLEAR_HISTORY_ACTION = "__JOKO_CLEAR_CHAT_HISTORY__";
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
@@ -110,7 +109,7 @@ function normalizeMessage(value) {
 }
 
 function normalizeRole(value) {
-  return String(value || "").trim().slice(0, AI_ROLE_MAX_LENGTH);
+  return String(value || "").trim();
 }
 
 function activeUsers(io) {
