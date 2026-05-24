@@ -52,13 +52,23 @@ function colorForName(value) {
 }
 
 function formatTime(value) {
-  const date = new Date(value);
+  const date = parseTimestamp(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: TIME_ZONE
   });
+}
+
+function parseTimestamp(value) {
+  if (typeof value !== "string") return new Date(value);
+
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+    return new Date(`${value.replace(" ", "T")}Z`);
+  }
+
+  return new Date(value);
 }
 
 function drawRule() {

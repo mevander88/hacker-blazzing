@@ -70,6 +70,10 @@ function activeUsers(io) {
   return [...users].sort((a, b) => a.localeCompare(b));
 }
 
+function nowIso() {
+  return new Date().toISOString();
+}
+
 function start() {
   initDb();
 
@@ -147,8 +151,8 @@ function start() {
 
       try {
         const result = run(
-          "INSERT INTO messages (room, user_name, body) VALUES (?, ?, ?)",
-          [ROOM_NAME, name, body]
+          "INSERT INTO messages (room, user_name, body, created_at) VALUES (?, ?, ?, ?)",
+          [ROOM_NAME, name, body, nowIso()]
         );
 
         const [message] = all(
