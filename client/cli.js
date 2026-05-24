@@ -6,6 +6,7 @@ const isTty = Boolean(process.stdout.isTTY);
 const useColor = isTty && !process.env.NO_COLOR;
 const useAnimation = isTty && !process.env.NO_ANIMATION;
 const frames = ["-", "\\", "|", "/"];
+const TIME_ZONE = "Asia/Jakarta";
 let spinner = null;
 
 const ansi = {
@@ -53,7 +54,11 @@ function colorForName(value) {
 function formatTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: TIME_ZONE
+  });
 }
 
 function drawRule() {
@@ -119,6 +124,14 @@ function makeLinePrinter(rl) {
     console.log(text);
     rl.prompt(true);
   };
+}
+
+function clearSubmittedInputLine() {
+  if (!isTty) return;
+
+  readline.moveCursor(process.stdout, 0, -1);
+  readline.clearLine(process.stdout, 0);
+  readline.cursorTo(process.stdout, 0);
 }
 
 function formatMessage(message, selfName) {
@@ -201,6 +214,8 @@ async function main() {
   });
 
   rl.on("line", (input) => {
+    clearSubmittedInputLine();
+
     const text = input.trim();
 
     if (!text) {
