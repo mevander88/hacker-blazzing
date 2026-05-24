@@ -15,6 +15,7 @@ Butuh Node.js 24 atau lebih baru untuk server karena SQLite memakai `node:sqlite
 7. Setelah pesan user masuk, server membaca history chat terbaru dari SQLite dan meminta DeepSeek memutuskan apakah `joko linux exploit` perlu nimbrung atau diam.
 8. History chat di room `public` direset otomatis setiap hari jam `00:00` WIB.
 9. Role tambahan `joko linux exploit` bisa diubah dari CLI dengan `/update-role`.
+10. `joko linux exploit` bisa membersihkan history chat jika diminta, tapi server hanya menyediakan aksi terbatas untuk menghapus tabel `messages` room `public`.
 
 ## Schema SQLite
 
@@ -83,10 +84,13 @@ AI bisa nimbrung tanpa ditag kalau obrolannya cocok. Tag `@ai` tetap bisa dipaka
 
 ```text
 chat> @ai rangkum obrolan terakhir
+chat> joko clear chat
 chat> /update-role jawab pakai gaya tongkrongan linux, singkat, agak sarkas
 chat> /show-role
 chat> /reset-role
 ```
+
+Joko tidak diberi akses shell, file server, SQL bebas, atau command admin lain. Untuk clear chat, server hanya menerima sinyal internal khusus lalu menjalankan `DELETE FROM messages WHERE room = ?` pada SQLite.
 
 Token DeepSeek jangan dicommit ke GitHub. Simpan di `.env` pada server:
 

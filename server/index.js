@@ -27,6 +27,7 @@ const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
 const LAST_HISTORY_RESET_KEY = "last_history_reset_date";
 const AI_ROLE_KEY = "ai_custom_role";
 const AI_ROLE_MAX_LENGTH = 2000;
+const AI_CLEAR_HISTORY_ACTION = "__JOKO_CLEAR_CHAT_HISTORY__";
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
@@ -170,7 +171,7 @@ function nextJakartaMidnightDelayMs() {
   return Math.max(1000, nextMidnightUtc - Date.now());
 }
 
-function clearChatHistory(io, reason) {
+function clearChatHistory(io, reason, message) {
   const resetDate = currentJakartaDate();
 
   run("DELETE FROM messages WHERE room = ?", [ROOM_NAME]);
@@ -178,7 +179,7 @@ function clearChatHistory(io, reason) {
 
   if (io) {
     io.to(ROOM_NAME).emit("system", {
-      body: `History chat direset otomatis jam 00:00 WIB (${reason}).`
+      body: message || `History chat direset otomatis jam 00:00 WIB (${reason}).`
     });
   }
 
@@ -293,6 +294,8 @@ async function askDeepSeek(currentMessage, options = {}) {
             getAiRole() ? `Role tambahan dari room: ${getAiRole()}` : "",
             "Kamu boleh nimbrung tanpa ditag, tapi harus selektif.",
             "Balas kalau ada pertanyaan, orang terlihat butuh bantuan, obrolan cocok untuk ditambahi konteks, atau kamu bisa memberi jawaban yang benar-benar berguna/lucu secara natural.",
+            `Kalau user minta kamu clear chat/history/obrolan, balas persis: ${AI_CLEAR_HISTORY_ACTION}`,
+            "Aksi clear chat itu satu-satunya aksi server yang tersedia untukmu. Kamu tidak punya akses shell, file, command server, SQL bebas, network tool, atau aksi admin lain.",
             `Kalau tidak perlu nimbrung, balas persis: ${AI_NO_REPLY}`,
             `${AI_TRIGGER} berarti user memanggil kamu langsung, jadi jangan diam.`,
             "Gunakan konteks chat yang diberikan, jawab singkat, natural, dan ikuti bahasa user.",
@@ -340,10 +343,19 @@ async function askDeepSeek(currentMessage, options = {}) {
   return answer.slice(0, 2000);
 }
 
+function isAiClearHistoryAction(answer) {
+  return answer.trim() === AI_CLEAR_HISTORY_ACTION;
+}
+
 async function replyWithAi(io, currentMessage, options = {}) {
   try {
     const answer = await askDeepSeek(currentMessage, options);
     if (!answer) return;
+
+    if (isAiClearHistoryAction(answer)) {
+      clearChatHistory(io, `${AI_NAME} request`, `${AI_NAME} membersihkan history chat.`);
+      return;
+    }
 
     const aiMessage = insertMessage(ROOM_NAME, AI_NAME, answer);
     io.to(ROOM_NAME).emit("chat", aiMessage);
