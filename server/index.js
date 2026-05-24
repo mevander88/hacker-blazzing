@@ -27,6 +27,7 @@ const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
 const LAST_HISTORY_RESET_KEY = "last_history_reset_date";
 const AI_ROLE_KEY = "ai_custom_role";
 const AI_CLEAR_HISTORY_ACTION = "__JOKO_CLEAR_CHAT_HISTORY__";
+const AI_LIST_IP_ACTION = "__JOKO_LIST_CLIENT_IPS__";
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
@@ -146,6 +147,14 @@ function activeUsers(io) {
   }
 
   return users.sort((a, b) => a.name.localeCompare(b.name) || a.ip.localeCompare(b.ip));
+}
+
+function formatActiveUsersForAi(io) {
+  const users = activeUsers(io);
+
+  if (!users.length) return "Belum ada user online.";
+
+  return users.map((user) => `- ${user.name}: ${user.ip}`).join("\n");
 }
 
 function nowIso() {
@@ -278,6 +287,15 @@ function isAiClearHistoryRequest(body) {
   return addressedToAi && clearIntent && chatTarget;
 }
 
+function isAiListIpRequest(body) {
+  const text = String(body || "").toLowerCase();
+  const addressedToAi = text.includes("joko") || text.includes(AI_TRIGGER.toLowerCase());
+  const listIntent = /\b(cek|check|lihat|list|daftar|tampilkan|show)\b/.test(text);
+  const ipTarget = /\b(ip|ips|alamat ip|client|user|users|online)\b/.test(text);
+
+  return addressedToAi && ipTarget && (listIntent || text.includes("ip"));
+}
+
 function formatChatContext(messages) {
   return messages
     .map((message) => {
@@ -325,7 +343,8 @@ async function askDeepSeek(currentMessage, options = {}) {
           "Kamu boleh nimbrung tanpa ditag, tapi harus selektif.",
           "Balas kalau ada pertanyaan, orang terlihat butuh bantuan, obrolan cocok untuk ditambahi konteks, atau kamu bisa memberi jawaban yang benar-benar berguna/lucu secara natural.",
           `Kalau user minta kamu clear chat/history/obrolan, balas persis: ${AI_CLEAR_HISTORY_ACTION}`,
-          "Aksi clear chat itu satu-satunya aksi server yang tersedia untukmu. Kamu tidak punya akses shell, file, command server, SQL bebas, network tool, atau aksi admin lain.",
+          `Kalau user minta kamu cek IP/client/user online, balas persis: ${AI_LIST_IP_ACTION}`,
+          "Aksi server yang tersedia untukmu hanya clear chat dan list IP client online. Kamu tidak punya akses shell, file, command server, SQL bebas, network tool, atau aksi admin lain.",
           `Kalau tidak perlu nimbrung, balas persis: ${AI_NO_REPLY}`,
           `${AI_TRIGGER}, joko, dan @joko berarti user memanggil kamu langsung, jadi jangan diam dan jangan balas ${AI_NO_REPLY}.`,
           "Gunakan konteks chat yang diberikan, jawab natural, lengkap saat diminta, dan ikuti bahasa user.",
@@ -391,6 +410,16 @@ function isAiClearHistoryAction(answer) {
   return answer.trim() === AI_CLEAR_HISTORY_ACTION;
 }
 
+function isAiListIpAction(answer) {
+  return answer.trim() === AI_LIST_IP_ACTION;
+}
+
+function sendAiIpList(io) {
+  const body = `User online + IP:\n${formatActiveUsersForAi(io)}`;
+  const aiMessage = insertMessage(ROOM_NAME, AI_NAME, body);
+  io.to(ROOM_NAME).emit("chat", aiMessage);
+}
+
 async function replyWithAi(io, currentMessage, options = {}) {
   try {
     const answer = await askDeepSeek(currentMessage, options);
@@ -398,6 +427,11 @@ async function replyWithAi(io, currentMessage, options = {}) {
 
     if (isAiClearHistoryAction(answer)) {
       clearChatHistory(io, `${AI_NAME} request`, `${AI_NAME} membersihkan history chat.`);
+      return;
+    }
+
+    if (isAiListIpAction(answer)) {
+      sendAiIpList(io);
       return;
     }
 
@@ -496,6 +530,11 @@ function start() {
 
         if (isAiClearHistoryRequest(body)) {
           clearChatHistory(io, `${AI_NAME} direct request`, `${AI_NAME} membersihkan history chat.`);
+          return;
+        }
+
+        if (isAiListIpRequest(body)) {
+          sendAiIpList(io);
           return;
         }
 
