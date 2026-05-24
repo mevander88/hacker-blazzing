@@ -97,7 +97,7 @@ async function drawBanner(serverUrl, room, name) {
   }
 
   drawRule();
-  console.log(`  ${c(ansi.dim, "Ketik pesan lalu Enter. Command: /users, /help, /quit")}`);
+  console.log(`  ${c(ansi.dim, "Ketik pesan lalu Enter. Command: /users, /update-role, /show-role, /reset-role, /help, /quit")}`);
   console.log("");
 }
 
@@ -241,13 +241,56 @@ async function main() {
     }
 
     if (text === "/help") {
-      line(`${c(ansi.bold, "Command")} /users, /help, /quit`);
+      line(`${c(ansi.bold, "Command")} /users, /update-role <role>, /show-role, /reset-role, /help, /quit`);
       return;
     }
 
     if (text === "/users") {
       socket.emit("users:get");
       line(c(ansi.gray, "Mengambil daftar user online..."));
+      return;
+    }
+
+    if (text.startsWith("/update-role")) {
+      const role = text.slice("/update-role".length).trim();
+
+      if (!role) {
+        line(`${c(ansi.red, "role kosong")} contoh: /update-role jawab lebih receh tapi tetap singkat`);
+        return;
+      }
+
+      socket.emit("ai:role:update", { role }, (ack) => {
+        if (!ack?.ok) {
+          line(`${c(ansi.red, "gagal update role")} ${ack?.error || "unknown error"}`);
+          return;
+        }
+
+        line(`${c(ansi.green, "role joko updated")} ${ack.role}`);
+      });
+      return;
+    }
+
+    if (text === "/show-role") {
+      socket.emit("ai:role:get", (ack) => {
+        if (!ack?.ok) {
+          line(`${c(ansi.red, "gagal ambil role")} ${ack?.error || "unknown error"}`);
+          return;
+        }
+
+        line(`${c(ansi.cyan, "role joko")} ${ack.role || "(kosong)"}`);
+      });
+      return;
+    }
+
+    if (text === "/reset-role") {
+      socket.emit("ai:role:reset", (ack) => {
+        if (!ack?.ok) {
+          line(`${c(ansi.red, "gagal reset role")} ${ack?.error || "unknown error"}`);
+          return;
+        }
+
+        line(c(ansi.green, "role joko direset"));
+      });
       return;
     }
 

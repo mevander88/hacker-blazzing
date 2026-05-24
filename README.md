@@ -14,6 +14,7 @@ Butuh Node.js 24 atau lebih baru untuk server karena SQLite memakai `node:sqlite
 6. Semua pesan baru disimpan ke SQLite dan dibroadcast realtime ke semua user di room `public`.
 7. Setelah pesan user masuk, server membaca history chat terbaru dari SQLite dan meminta DeepSeek memutuskan apakah `joko linux exploit` perlu nimbrung atau diam.
 8. History chat di room `public` direset otomatis setiap hari jam `00:00` WIB.
+9. Role tambahan `joko linux exploit` bisa diubah dari CLI dengan `/update-role`.
 
 ## Schema SQLite
 
@@ -82,6 +83,9 @@ AI bisa nimbrung tanpa ditag kalau obrolannya cocok. Tag `@ai` tetap bisa dipaka
 
 ```text
 chat> @ai rangkum obrolan terakhir
+chat> /update-role jawab pakai gaya tongkrongan linux, singkat, agak sarkas
+chat> /show-role
+chat> /reset-role
 ```
 
 Token DeepSeek jangan dicommit ke GitHub. Simpan di `.env` pada server:
@@ -153,5 +157,8 @@ NO_ANIMATION=1 ./join.sh budi
 ```text
 /help   tampilkan bantuan
 /users  lihat info user online
+/update-role <role>  update role tambahan joko linux exploit
+/show-role           lihat role tambahan joko linux exploit
+/reset-role          kosongkan role tambahan joko linux exploit
 /quit   keluar
 ```
