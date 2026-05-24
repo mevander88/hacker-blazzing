@@ -12,6 +12,7 @@ Butuh Node.js 24 atau lebih baru untuk server karena SQLite memakai `node:sqlite
 4. Client otomatis masuk ke satu room tetap: `public`.
 5. Server mengirim history chat terakhir dari SQLite.
 6. Semua pesan baru disimpan ke SQLite dan dibroadcast realtime ke semua user di room `public`.
+7. Kalau pesan mengandung `@ai`, server membaca history chat terbaru dari SQLite dan meminta DeepSeek membalas sebagai user `ai`.
 
 ## Schema SQLite
 
@@ -56,12 +57,43 @@ PORT=3000
 DB_PATH=./data/chat.sqlite
 ROOM_NAME=public
 HISTORY_LIMIT=50
+DEEPSEEK_MODEL=deepseek-v4-flash
+AI_TRIGGER=@ai
+AI_CONTEXT_LIMIT=30
 ```
 
 Kalau ingin set manual:
 
 ```bash
 HOST=0.0.0.0 PORT=3000 ./start-server.sh
+```
+
+## AI Agent DeepSeek
+
+AI akan menjawab hanya kalau ditag dengan `@ai`:
+
+```text
+chat> @ai rangkum obrolan terakhir
+```
+
+Token DeepSeek jangan dicommit ke GitHub. Simpan di `.env` pada server:
+
+```bash
+cp .env.example .env
+nano .env
+systemctl restart public-cli-chat.service
+```
+
+Variabel penting:
+
+```text
+DEEPSEEK_API_KEY=token_deepseek
+DEEPSEEK_MODEL=deepseek-v4-flash
+AI_NAME=ai
+AI_TRIGGER=@ai
+AI_CONTEXT_LIMIT=30
+AI_MAX_TOKENS=500
+AI_TIMEOUT_MS=30000
 ```
 
 ## Join dari Client
