@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT || 3000);
 const ROOM_NAME = process.env.ROOM_NAME || "public";
 const HISTORY_LIMIT = Number(process.env.HISTORY_LIMIT || 50);
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "..", "data", "chat.sqlite");
-const AI_NAME = process.env.AI_NAME || "ai";
+const AI_NAME = process.env.AI_NAME || "joko linux exploit";
 const AI_TRIGGER = process.env.AI_TRIGGER || "@ai";
 const AI_CONTEXT_LIMIT = Number(process.env.AI_CONTEXT_LIMIT || 30);
 const AI_MAX_TOKENS = Number(process.env.AI_MAX_TOKENS || 500);
@@ -136,7 +136,7 @@ function cleanAiPrompt(body) {
 function formatChatContext(messages) {
   return messages
     .map((message) => {
-      const author = message.user_name === AI_NAME ? "AI" : message.user_name;
+      const author = message.user_name === AI_NAME ? AI_NAME : message.user_name;
       return `${author}: ${message.body}`;
     })
     .join("\n");

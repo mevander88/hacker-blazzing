@@ -12,7 +12,7 @@ Butuh Node.js 24 atau lebih baru untuk server karena SQLite memakai `node:sqlite
 4. Client otomatis masuk ke satu room tetap: `public`.
 5. Server mengirim history chat terakhir dari SQLite.
 6. Semua pesan baru disimpan ke SQLite dan dibroadcast realtime ke semua user di room `public`.
-7. Kalau pesan mengandung `@ai`, server membaca history chat terbaru dari SQLite dan meminta DeepSeek membalas sebagai user `ai`.
+7. Kalau pesan mengandung `@ai`, server membaca history chat terbaru dari SQLite dan meminta DeepSeek membalas sebagai user `joko linux exploit`.
 
 ## Schema SQLite
 
@@ -89,7 +89,7 @@ Variabel penting:
 ```text
 DEEPSEEK_API_KEY=token_deepseek
 DEEPSEEK_MODEL=deepseek-v4-flash
-AI_NAME=ai
+AI_NAME=joko linux exploit
 AI_TRIGGER=@ai
 AI_CONTEXT_LIMIT=30
 AI_MAX_TOKENS=500
