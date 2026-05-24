@@ -1,0 +1,19 @@
+[Unit]
+Description=Public CLI Chat Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/public-cli-chat
+Environment=HOST=0.0.0.0
+Environment=PORT=3000
+Environment=DB_PATH=/root/public-cli-chat/data/chat.sqlite
+Environment=ROOM_NAME=public
+Environment=HISTORY_LIMIT=50
+ExecStart=/root/.nvm/versions/node/v24.13.0/bin/node /root/public-cli-chat/server/index.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

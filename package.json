@@ -1,0 +1,17 @@
+{
+  "name": "public-cli-chat",
+  "version": "1.0.0",
+  "description": "Realtime public room chat via CLI using Socket.IO and SQLite.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "client": "node client/cli.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
