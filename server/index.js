@@ -236,13 +236,19 @@ function insertMessage(room, userName, body) {
 }
 
 function isAiMention(body) {
-  const escaped = AI_TRIGGER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|\\s)${escaped}(?=\\s|$|[,.!?])`, "i").test(body);
+  const escapedTrigger = AI_TRIGGER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const triggerRegex = new RegExp(`(^|\\s)${escapedTrigger}(?=\\s|$|[,.!?])`, "i");
+  const jokoRegex = /(^|\s)@?joko(?=\s|$|[,.!?])/i;
+
+  return triggerRegex.test(body) || jokoRegex.test(body);
 }
 
 function cleanAiPrompt(body) {
-  const escaped = AI_TRIGGER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const cleaned = body.replace(new RegExp(escaped, "gi"), "").trim();
+  const escapedTrigger = AI_TRIGGER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const cleaned = body
+    .replace(new RegExp(escapedTrigger, "gi"), "")
+    .replace(/(^|\s)@?joko(?=\s|$|[,.!?])/gi, " ")
+    .trim();
   return cleaned || body;
 }
 
@@ -378,6 +384,7 @@ async function replyWithAi(io, currentMessage, options = {}) {
     const aiMessage = insertMessage(ROOM_NAME, AI_NAME, answer);
     io.to(ROOM_NAME).emit("chat", aiMessage);
   } catch (err) {
+    console.error(`${AI_NAME} failed to reply: ${err.message}`);
     io.to(ROOM_NAME).emit("system", { body: `${AI_NAME} gagal jawab: ${err.message}` });
   }
 }
