@@ -253,7 +253,13 @@ async function main() {
     }
 
     if (text === "/help") {
-      line(`${c(ansi.bold, "Command")} /users, /update-role <role>, /show-role, /reset-role, /help, /quit`);
+      line(c(ansi.bold, "Command"));
+      line(`/users                ${c(ansi.gray, "lihat user online + IP")}`);
+      line(`/update-role <role>   ${c(ansi.gray, "ubah role tambahan Joko")}`);
+      line(`/show-role            ${c(ansi.gray, "lihat role tambahan Joko")}`);
+      line(`/reset-role           ${c(ansi.gray, "kosongkan role tambahan Joko")}`);
+      line(`/help                 ${c(ansi.gray, "tampilkan bantuan")}`);
+      line(`/quit                 ${c(ansi.gray, "keluar")}`);
       return;
     }
 

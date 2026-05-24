@@ -161,7 +161,7 @@ NO_ANIMATION=1 ./join.sh budi
 
 ```text
 /help   tampilkan bantuan
-/users  lihat info user online
+/users  lihat user online + IP client
 /update-role <role>  update role tambahan joko linux exploit
 /show-role           lihat role tambahan joko linux exploit
 /reset-role          kosongkan role tambahan joko linux exploit
