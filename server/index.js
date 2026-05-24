@@ -16,7 +16,7 @@ const AI_TRIGGER = process.env.AI_TRIGGER || "@ai";
 const AI_AUTONOMOUS = process.env.AI_AUTONOMOUS !== "0";
 const AI_NO_REPLY = process.env.AI_NO_REPLY || "NO_REPLY";
 const AI_CONTEXT_LIMIT = Number(process.env.AI_CONTEXT_LIMIT || 30);
-const AI_MAX_TOKENS = Number(process.env.AI_MAX_TOKENS || 500);
+const AI_MAX_TOKENS = process.env.AI_MAX_TOKENS ? Number(process.env.AI_MAX_TOKENS) : undefined;
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 30000);
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
@@ -241,6 +241,15 @@ function cleanAiPrompt(body) {
   return cleaned || body;
 }
 
+function isAiClearHistoryRequest(body) {
+  const text = String(body || "").toLowerCase();
+  const addressedToAi = text.includes("joko") || text.includes(AI_TRIGGER.toLowerCase());
+  const clearIntent = /\b(clear|hapus|bersihin|bersihkan|reset|delete)\b/.test(text);
+  const chatTarget = /\b(chat|history|histori|obrolan|pesan)\b/.test(text);
+
+  return addressedToAi && clearIntent && chatTarget;
+}
+
 function formatChatContext(messages) {
   return messages
     .map((message) => {
@@ -339,7 +348,7 @@ async function askDeepSeek(currentMessage, options = {}) {
   if (!answer) throw new Error("DeepSeek tidak mengirim jawaban.");
   if (!forceReply && answer.toUpperCase() === AI_NO_REPLY.toUpperCase()) return null;
 
-  return answer.slice(0, 2000);
+  return answer;
 }
 
 function isAiClearHistoryAction(answer) {
@@ -446,6 +455,11 @@ function start() {
 
         io.to(ROOM_NAME).emit("chat", message);
         if (ack) ack({ ok: true });
+
+        if (isAiClearHistoryRequest(body)) {
+          clearChatHistory(io, `${AI_NAME} direct request`, `${AI_NAME} membersihkan history chat.`);
+          return;
+        }
 
         if (message.user_name !== AI_NAME && (AI_AUTONOMOUS || isAiMention(body))) {
           replyWithAi(io, message, { forceReply: isAiMention(body) });
