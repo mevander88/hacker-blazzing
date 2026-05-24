@@ -117,18 +117,35 @@ function normalizeRole(value) {
   return String(value || "").trim();
 }
 
+function normalizeIp(value) {
+  const ip = String(value || "").split(",")[0].trim();
+  return ip.replace(/^::ffff:/, "") || "-";
+}
+
+function clientIp(socket) {
+  const headers = socket.handshake.headers || {};
+  return normalizeIp(headers["x-forwarded-for"] || headers["x-real-ip"] || socket.handshake.address);
+}
+
 function activeUsers(io) {
-  const users = new Set();
   const room = io.sockets.adapter.rooms.get(ROOM_NAME);
 
   if (!room) return [];
 
+  const users = [];
+
   for (const socketId of room) {
     const socket = io.sockets.sockets.get(socketId);
-    if (socket?.data?.name) users.add(socket.data.name);
+    if (socket?.data?.name) {
+      users.push({
+        id: socket.id,
+        name: socket.data.name,
+        ip: socket.data.ip || clientIp(socket)
+      });
+    }
   }
 
-  return [...users].sort((a, b) => a.localeCompare(b));
+  return users.sort((a, b) => a.name.localeCompare(b.name) || a.ip.localeCompare(b.ip));
 }
 
 function nowIso() {
@@ -425,6 +442,7 @@ function start() {
     }
 
     socket.data.name = name;
+    socket.data.ip = clientIp(socket);
     socket.join(ROOM_NAME);
 
     try {

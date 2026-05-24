@@ -154,6 +154,18 @@ function formatMessage(message, selfName) {
   return `${time} ${c(nameStyle, displayName)} ${body}`;
 }
 
+function formatUser(user) {
+  if (typeof user === "string") return user;
+
+  const name = user?.name || "-";
+  const ip = user?.ip || "-";
+  return `${name} ${c(ansi.gray, `[${ip}]`)}`;
+}
+
+function formatUsers(users) {
+  return users.map(formatUser).join(", ") || "-";
+}
+
 async function main() {
   const serverUrl = readArg("server", process.env.SERVER || "http://localhost:3000");
   const name = readArg("name", process.env.NAME || "");
@@ -210,7 +222,7 @@ async function main() {
       line(c(ansi.gray, "Belum ada history chat."));
     }
 
-    line(`${c(ansi.cyan, "online")} ${payload.users.join(", ") || "-"}`);
+    line(`${c(ansi.cyan, "online")} ${formatUsers(payload.users)}`);
   });
 
   socket.on("chat", printMessage);
@@ -220,7 +232,7 @@ async function main() {
   });
 
   socket.on("users", (users) => {
-    line(`${c(ansi.cyan, "online")} ${users.join(", ") || "-"}`);
+    line(`${c(ansi.cyan, "online")} ${formatUsers(users)}`);
   });
 
   rl.on("line", (input) => {
